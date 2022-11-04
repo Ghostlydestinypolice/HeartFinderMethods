@@ -1,0 +1,145 @@
+private byte[,] lungEdgesDetector(byte[,] inputImage)
+        {
+            byte[,] output = inputImage;
+            bool xFound = false; bool secondXFound = false;
+            int firstX = 0; int firstY = 0;
+            int leftFirstX = 0; int leftFirstY = 0;  
+
+            while (!xFound)
+            {
+                int y = (int)(inputImage.GetLength(1) * 0.5);
+                int startY = y;
+                for (int x = 0; x < 0.5 * inputImage.GetLength(0) && !xFound; x++)
+                {
+                    if (inputImage[x, y] == 1 || inputImage[x, y] == 255)
+                    {
+                        firstY = y;
+                        firstX = x;
+                        xFound = true;
+                    }
+                }
+                if (y <= startY + 10 && y >= startY) y++;
+                else if (y > startY) y = startY -1;
+                if (y >= startY - 10 && y < startY) y--;
+                else if (y < startY - 10) break;
+            }
+            while (!secondXFound)
+            {
+                int y = (int)(inputImage.GetLength(1) * 0.5);
+                int startY = y;
+                for (int x = inputImage.GetLength(0) - 1; x > 0.5 * inputImage.GetLength(0) && !secondXFound; x--)
+                {
+                    if (inputImage[x, y] == 1 || inputImage[x, y] == 255)
+                    {
+                        leftFirstY = y;
+                        leftFirstX = x;
+                        xFound = true;
+                    }
+                }
+                if (y <= startY + 10 && y >= startY) y++;
+                else if (y > startY) y = startY - 1;
+                if (y >= startY - 10 && y < startY) y--;
+                else if (y < startY - 10) break;
+            }
+
+            //Go over all the pixels of that side until the clavicula is met
+            //set clavicula pixels to a certain value
+            bool claviculaFound = false; bool otherClavFound = false;
+            bool diaphramFound = false; bool otherDiaFound = false;
+            int xCurrent = firstX; int yCurrent = firstY;
+            bool useFirstLeft = false; bool resetRight = false; bool resetLeft = false;
+            while (!claviculaFound && xFound && !otherClavFound) ///TODO: otherside and moving up
+            {
+                int[] nextPixel = new int[2];
+                if (!claviculaFound) nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, true, true); ///TODO: other side?
+                else if (!diaphramFound)
+                {
+                    //Goes to find the right diaphram
+                    if (resetRight)
+                    {
+                        xCurrent = firstX; yCurrent = firstY;
+                        resetRight = false;
+                    }
+                    nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, true, false);
+                }
+                else if (!otherClavFound)
+                {
+                    //Finds left clavicula
+                    if (useFirstLeft)
+                    {
+                        xCurrent = leftFirstX; yCurrent = leftFirstY;
+                        useFirstLeft = false;
+                    }
+                    nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, false, true);
+                }
+                else if(!otherDiaFound)
+                {
+                    //Finds left diaphram
+                    if (resetLeft)
+                    {
+                        xCurrent = leftFirstX; yCurrent = leftFirstY;
+                        resetLeft = false;
+                    }
+                    nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, false, false);
+                }
+                if (nextPixel[0] == 0 && nextPixel[1] == 0) //in case no output was found
+                {
+                    MessageBox.Show("No lung was found");
+                    return output;
+                }
+
+                //Fill in the gaps
+                Point currentPoint = new Point();
+                currentPoint.X = xCurrent; currentPoint.Y = yCurrent;
+                Point nextPoint = new Point();
+                nextPoint.X = nextPixel[0]; nextPoint.Y = nextPixel[1];
+                Point highest = new Point(); Point lowest = new Point();
+                if(nextPoint.Y >= currentPoint.Y)
+                {
+                    highest = nextPoint;
+                    lowest = currentPoint;
+                }
+                else
+                {
+                    highest = currentPoint;
+                    lowest = nextPoint;
+                }
+                output = fillInLungs(inputImage, lowest, highest);
+
+                //Check when above clavicula or the border was reached
+                //When going up
+                xCurrent = nextPoint.X; yCurrent = nextPoint.Y;
+                if (!claviculaFound)
+                {
+                    float a = caviculaLines[0]; float b = caviculaLines[1]; ///TODO: change for left side
+                    float yForThisX = a * xCurrent + b;
+                    if (yCurrent >= yForThisX)
+                    {
+                        claviculaFound = true;
+                        resetRight = true;
+                    }
+                }
+                else if (!diaphramFound)
+                {
+                    ///TODO: diafragma in zetten
+                    
+                }
+                else if (!otherClavFound)
+                {
+                    float a = caviculaLines[2]; float b = caviculaLines[3]; ///TODO: change for left side
+                    float yForThisX = a * xCurrent + b;
+                    if (yCurrent >= yForThisX)
+                    {
+                        otherClavFound = true;
+                        resetLeft = true;
+                    }
+                }
+                else if (!otherDiaFound)
+                {
+                    ///TODO: voor andere diafragma testen
+                }
+                //End of while
+            }
+            ///TODO: mark pixels part of the lung edge
+            return output;
+        }

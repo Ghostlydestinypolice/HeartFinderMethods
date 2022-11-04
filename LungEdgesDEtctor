@@ -3,12 +3,12 @@ private byte[,] lungEdgesDetector(byte[,] inputImage)
             byte[,] output = inputImage;
             bool xFound = false; bool secondXFound = false;
             int firstX = 0; int firstY = 0;
-            int leftFirstX = 0; int leftFirstY = 0;  
+            int leftFirstX = 0; int leftFirstY = 0;
+            int y = (int)(inputImage.GetLength(1) * 0.5);
+            int startY = y;
 
             while (!xFound)
             {
-                int y = (int)(inputImage.GetLength(1) * 0.5);
-                int startY = y;
                 for (int x = 0; x < 0.5 * inputImage.GetLength(0) && !xFound; x++)
                 {
                     if (inputImage[x, y] == 1 || inputImage[x, y] == 255)
@@ -19,7 +19,7 @@ private byte[,] lungEdgesDetector(byte[,] inputImage)
                     }
                 }
                 if (y <= startY + 10 && y >= startY) y++;
-                else if (y > startY) y = startY -1;
+                else if (y > startY + 10) y = startY -1;
                 if (y >= startY - 10 && y < startY) y--;
                 else if (y < startY - 10) break;
             }
@@ -48,7 +48,7 @@ private byte[,] lungEdgesDetector(byte[,] inputImage)
             bool diaphramFound = false; bool otherDiaFound = false;
             int xCurrent = firstX; int yCurrent = firstY;
             bool useFirstLeft = false; bool resetRight = false; bool resetLeft = false;
-            while (!claviculaFound && xFound && !otherClavFound) ///TODO: otherside and moving up
+            while ((xFound && secondXFound) && (!claviculaFound || !otherClavFound || !otherClavFound || !otherDiaFound)) ///TODO: otherside and moving up
             {
                 int[] nextPixel = new int[2];
                 if (!claviculaFound) nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, true, true); ///TODO: other side?
@@ -122,7 +122,7 @@ private byte[,] lungEdgesDetector(byte[,] inputImage)
                 else if (!diaphramFound)
                 {
                     ///TODO: diafragma in zetten
-                    
+                    if(yCurrent + 1 >= MaxY) diaphramFound = true; //+1 cuz the border should never be an acceptable value
                 }
                 else if (!otherClavFound)
                 {
@@ -137,6 +137,7 @@ private byte[,] lungEdgesDetector(byte[,] inputImage)
                 else if (!otherDiaFound)
                 {
                     ///TODO: voor andere diafragma testen
+                    if(yCurrent + 1 >= MaxY) otherDiaFound = true; //+1 cuz the border should never be an acceptable value
                 }
                 //End of while
             }

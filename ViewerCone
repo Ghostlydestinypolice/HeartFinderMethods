@@ -1,3 +1,4 @@
+//First wants to look far away, and then get closer. if nothing is close, it'll start to look at the other pixels closer and further.
 private List<sbyte[]> getViewerCone (bool rightSide)
         {
             List<sbyte[]> list = new List<sbyte[]>();

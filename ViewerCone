@@ -5,8 +5,8 @@ private List<sbyte[]> getViewerCone (bool rightSide)
             sbyte sideDet = 1;
             if (!rightSide) sideDet = -1;
 
-            sbyte dX = sideDet; sbyte dY = 1;
-            for (; dY <= 8; dY++)
+            sbyte dX = sideDet; sbyte dY = 8;
+            for (; dY >= 1; dY--)
             {
                 currentAddition[0] = 0;
                 currentAddition[1] = dY;
@@ -14,7 +14,7 @@ private List<sbyte[]> getViewerCone (bool rightSide)
             }
             for (; dX * sideDet < 3; dX+=sideDet)
             {
-                for(dY = 1; dY <= 8; dY++)
+                for(dY = 8; dY >= 1; dY--)
                 {
                     currentAddition[0] = dX;
                     currentAddition[1] = dY;
@@ -23,7 +23,7 @@ private List<sbyte[]> getViewerCone (bool rightSide)
             }
             for (dX = (sbyte)(sideDet*-1); dX * sideDet > -3; dX-= sideDet)
             {
-                for (dY = 1; dY <= 8; dY++)
+                for (dY = 8; dY >= 1; dY--)
                 {
                     currentAddition[0] = dX;
                     currentAddition[1] = dY;

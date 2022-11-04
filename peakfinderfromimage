@@ -1,0 +1,11 @@
+    private List<double[]> peakFinderFromImage(byte[,] inputImage, int kernelSizeHough, int kernelSizePeaks, float percentageOfMaxStrength)
+        {
+            double lowerlimit1 = 2;
+            double upperlimit1 = 2.3;
+            double lowerlimit2 = Math.PI - upperlimit1;
+            double upperlimit2 = Math.PI - lowerlimit1;
+            int[,] transform = houghTransformAngleLimits(inputImage, lowerlimit1, upperlimit1, lowerlimit2, upperlimit2);   //houghTransform(inputImage, kernelSizeHough);
+            List<double[]> results = new List<double[]>();
+            results = peakFinder(transform, inputImage, kernelSizePeaks, percentageOfMaxStrength);
+            return results;
+        }

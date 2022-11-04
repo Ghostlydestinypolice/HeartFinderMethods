@@ -1,0 +1,60 @@
+private int[] nextPixelFinder(byte[,] image, int currentX, int currentY, bool rightSide, bool up) //please not that the right side of an x-ray is the left side of the image
+        {
+            int[] output = new int[2];
+            sbyte dX; sbyte dY;
+            bool borderReached = false; int reachedY = 0;
+            sbyte vertDir = -1; //-1 is up in an image
+            if(!up) vertDir = 1;
+
+            List<sbyte[]> viewerCone = getViewerCone(rightSide);
+            foreach (sbyte[] entry in viewerCone)
+            {
+                dX = entry[0]; dY = (sbyte)(entry[1] * vertDir); //-1 to go up
+                if (dX == 0 && dY == 0) continue; //safety in case it accidentally looks at the current pixel
+                int stepX = currentX + dX; int stepY = currentY + dY;
+                if (image[stepX, stepY] >= 0)
+                {
+                    output[0] = stepX; output[1] = stepY;
+                    return output;
+                }
+                if (stepY <= MinY)
+                {
+                    borderReached = true;
+                    reachedY = stepY;
+                }
+                else if (stepY >= MaxY)
+                {
+                    borderReached = true;
+                    reachedY = stepY; ///TODO: when lower border hit no diaphram was found
+                }
+            }
+            if (borderReached)
+            {
+                while (reachedY >= MaxY && reachedY <= MinY) reachedY -= vertDir;
+                output[0] = currentX; output[1] = reachedY; //Return the first non-deleted pixel
+                if (up)
+                {
+                    if(rightSide)
+                    {
+                        rightUpperBorder.X = currentX; rightUpperBorder.Y = currentY;
+                    }
+                    else
+                    {
+                        leftUpperBorder.X = currentX; leftUpperBorder.Y = currentY;
+                    }
+                }
+                else
+                {
+                    if (rightSide)
+                    {
+                        rightLowerBorder.X = currentX; rightLowerBorder.Y = currentY;
+                    }
+                    else
+                    {
+                        leftLowerBorder.X = currentX; leftLowerBorder.Y = currentY;
+                    }
+                }
+            }
+
+            return output;
+        }

@@ -1,0 +1,40 @@
+private byte[,] fillInLungs(byte[,] inputImage, Point lowestPoint, Point highestPoint)
+        {
+            byte[,] output = inputImage;
+
+            int dX = highestPoint.X - lowestPoint.X;
+            int dY = highestPoint.Y - lowestPoint.Y;
+            float slope; string slopeType = "dxdy";
+            if (dX == 1 || dX == -1 || dY == 1 || dY == -1) return output; //in case of already bordering pixels
+            if (dX == 0 && dY == 0) return output; //in case it's the same pixel twice
+            if (dX >= dY)
+            {
+                slope = dY / dX;
+                slopeType = "dydx";
+            }
+            else  slope = dX / dY;
+
+            int startX = lowestPoint.X; int startY = lowestPoint.Y;
+            int x = 0; int y = 0;
+            if(slopeType == "dydx")
+            {
+                int b = lowestPoint.Y - (int)(slope * lowestPoint.X);
+                for (x = lowestPoint.X; x <= highestPoint.X; x++)
+                {
+                    y = (int)(slope * x) + b;
+                    output[x, y] = 255; ///TODO: change to determine what was done?
+                }
+            }
+            else
+            {
+                int b = lowestPoint.X - (int)(slope * lowestPoint.Y);
+                for (y = lowestPoint.Y; y <= highestPoint.Y; y++)
+                {
+                    x = (int)(slope * y) + b;
+                    output[x, y] = 255; ///TODO: see above
+                }
+            }
+
+            ///TODO: maybe add an extra line between highest en lowest
+            return output;
+        }

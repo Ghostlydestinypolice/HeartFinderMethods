@@ -1,0 +1,53 @@
+private int maxValueFinder(byte[,] inputImage)
+        {
+            int maxValue = 0;
+            for (int x = 0; x < InputImage.Size.Width; x++)                 // loop over columns
+            {
+                for (int y = 0; y < InputImage.Size.Height; y++)            // loop over rows
+                {
+                    if (inputImage[x, y] > maxValue) maxValue = inputImage[x, y];
+                }
+            }
+            return maxValue;
+        }
+
+        private byte[,] brightSpotDelete(byte[,] inputImage)
+        {
+            byte[,] output = inputImage;
+            int threshold;
+            int maxValue = 0;
+            List<byte[]> neighbourVectors = new List<byte[]>()
+                {
+                    new byte[] {0, 0, 1}, new byte[] {1, 0, 2}, new byte[] {2, 0, 3},
+                    new byte[] {2, 1, 4}, new byte[] {2, 2, 3}, new byte[] {1, 2, 2},
+                    new byte[] {0, 2, 1}, new byte[] { 0, 1, 0} //list of all neighbouring pixels (as vector movements from the bottom-right) and their weight
+                };
+
+            maxValue = maxValueFinder(inputImage);
+            threshold = (int)(maxValue * 0.7);
+            for (int x = 0; x < InputImage.Size.Width; x++)                 // loop over columns
+            {
+                for (int y = 0; y < InputImage.Size.Height; y++)            // loop over rows
+                {
+                    if (inputImage[x, y] >= threshold)
+                    {
+                        int totalValue = 0; int totalSteps = 0;
+                        for (int t = 0; t < neighbourVectors.Count; t++)
+                        {
+                            int newX = (x + 1) - neighbourVectors[t][0];
+                            int newY = (y + 1) - neighbourVectors[t][1];
+                            if (newX >= 0 && newX < inputImage.GetLength(0)
+                                && newY >= 0 && newY < inputImage.GetLength(1))
+                            {
+                                totalSteps++;
+                                totalValue += inputImage[newX, newY];
+                            }
+                        }
+                        byte average = (byte)(totalValue / totalSteps);
+                        inputImage[x, y] = average;
+                    }
+                }
+            }
+
+            return output;
+        }

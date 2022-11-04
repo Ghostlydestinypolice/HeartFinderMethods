@@ -1,0 +1,342 @@
+        private List<sbyte[]> getViewerConeUpandDown(bool rightSide)
+        {
+            List<sbyte[]> list = new List<sbyte[]>();
+            sbyte[] currentAddition = new sbyte[2];
+            sbyte sideDet = 1;
+            if (!rightSide) sideDet = -1;
+
+            sbyte dX = sideDet; sbyte dY = 1;
+            for (; dY <= 4; dY++)
+            {
+                currentAddition[0] = 0;
+                currentAddition[1] = dY;
+                list.Add(currentAddition);
+            }
+            for (; dX * sideDet < 3; dX += sideDet)
+            {
+                for (dY = 1; dY <= 4; dY++)
+                {
+                    currentAddition[0] = dX;
+                    currentAddition[1] = dY;
+                    list.Add(currentAddition);
+                }
+            }
+            for (dX = (sbyte)(sideDet * -1); dX * sideDet > -3; dX -= sideDet)
+            {
+                for (dY = 1; dY <= 4; dY++)
+                {
+                    currentAddition[0] = dX;
+                    currentAddition[1] = dY;
+                    list.Add(currentAddition);
+                }
+            }
+            //First section filled
+            for (dY = 1 + 4; dY <= 4 + 4; dY++)
+            {
+                currentAddition[0] = 0;
+                currentAddition[1] = dY;
+                list.Add(currentAddition);
+            }
+            for (dX = sideDet; dX * sideDet < 5; dX += sideDet)
+            {
+                for (dY = 1 + 4; dY <= 4 + 4; dY++)
+                {
+                    currentAddition[0] = dX;
+                    currentAddition[1] = dY;
+                    list.Add(currentAddition);
+                }
+            }
+            for (dX = (sbyte)(sideDet * -1); dX * sideDet > -5; dX -= sideDet)
+            {
+                for (dY = 1 + 4; dY <= 4 + 4; dY++)
+                {
+                    currentAddition[0] = dX;
+                    currentAddition[1] = dY;
+                    list.Add(currentAddition);
+                }
+            }
+            //Second section filled
+
+            for ( dY = -1; dY >= -4; dY--)
+            {
+                currentAddition[0] = 0;
+                currentAddition[1] = dY;
+                list.Add(currentAddition);
+            }
+            for (; dX * sideDet < 3; dX += sideDet)
+            {
+                for (dY = -1; dY >= -4; dY--)
+                {
+                    currentAddition[0] = dX;
+                    currentAddition[1] = dY;
+                    list.Add(currentAddition);
+                }
+            }
+            for (dX = (sbyte)(sideDet * -1); dX * sideDet > -3; dX -= sideDet)
+            {
+                for (dY = -1; dY >= -4; dY--)
+                {
+                    currentAddition[0] = dX;
+                    currentAddition[1] = dY;
+                    list.Add(currentAddition);
+                }
+            }
+            //First section filled
+            for (dY = -1 - 4; dY >= -4 - 4; dY--)
+            {
+                currentAddition[0] = 0;
+                currentAddition[1] = dY;
+                list.Add(currentAddition);
+            }
+            for (dX = sideDet; dX * sideDet < 5; dX += sideDet)
+            {
+                for (dY = -1 - 4; dY >= -4 - 4; dY--)
+                {
+                    currentAddition[0] = dX;
+                    currentAddition[1] = dY;
+                    list.Add(currentAddition);
+                }
+            }
+            for (dX = (sbyte)(sideDet * -1); dX * sideDet > -5; dX -= sideDet)
+            {
+                for (dY = -1 - 4; dY >= -4 - 4; dY--)
+                {
+                    currentAddition[0] = dX;
+                    currentAddition[1] = dY;
+                    list.Add(currentAddition);
+                }
+            }
+            // last section filled 
+
+            return list;
+        }
+        
+        private int[] nextPixelFinder(byte[,] image, int currentX, int currentY, bool rightSide, bool up, bool ViewerCone) //please not that the right side of an x-ray is the left side of the image
+        {
+            int[] output = new int[2];
+            sbyte dX; sbyte dY;
+            bool borderReached = false; int reachedY = 0;
+            sbyte vertDir = -1; //-1 is up in an image
+            List<sbyte[]> viewerCone = new List<sbyte[]>();
+            if (!up) vertDir = 1;
+
+            if (ViewerCone)
+            {
+                viewerCone = getViewerCone(rightSide);
+            }
+            else
+            {
+                viewerCone = getViewerConeUpandDown(rightSide);
+            }
+            foreach (sbyte[] entry in viewerCone)
+            {
+                dX = entry[0]; dY = (sbyte)(entry[1] * vertDir); //-1 to go up
+                if (dX == 0 && dY == 0) continue; //safety in case it accidentally looks at the current pixel
+                int stepX = currentX + dX; int stepY = currentY + dY;
+                if (image[stepX, stepY] >= 0)
+                {
+                    output[0] = stepX; output[1] = stepY;
+                    return output;
+                }
+                if (stepY <= MinY)
+                {
+                    borderReached = true;
+                    reachedY = stepY;
+                }
+                else if (stepY >= MaxY)
+                {
+                    borderReached = true;
+                    reachedY = stepY; ///TODO: when lower border hit no diaphram was found
+                }
+            }
+            if (borderReached)
+            {
+                while (reachedY >= MaxY && reachedY <= MinY) reachedY -= vertDir;
+                output[0] = currentX; output[1] = reachedY; //Return the first non-deleted pixel
+                if (up)
+                {
+                    if (rightSide)
+                    {
+                        rightUpperBorder.X = currentX; rightUpperBorder.Y = currentY;
+                    }
+                    else
+                    {
+                        leftUpperBorder.X = currentX; leftUpperBorder.Y = currentY;
+                    }
+                }
+                else
+                {
+                    if (rightSide)
+                    {
+                        rightLowerBorder.X = currentX; rightLowerBorder.Y = currentY;
+                    }
+                    else
+                    {
+                        leftLowerBorder.X = currentX; leftLowerBorder.Y = currentY;
+                    }
+                }
+            }
+
+            return output;
+        }
+
+        
+        private byte[,] diaphragmDetector(byte[,] inputImage)
+        {
+            byte[,] output = inputImage;
+            bool yFound = false; bool secondyFound = false;
+            int firstX = 0; int firstY = 0;
+            int leftFirstX = 0; int leftFirstY = 0;
+            bool leftborderfound = false; bool rightborderfound = false;
+            bool middleleftfound = false; bool middlerightfound = false;
+            bool resetRight = false; bool resetLeft = false; bool useFirstLeft = false;
+
+
+            while (!yFound)
+            {
+                int x = (int)(inputImage.GetLength(0) * 0.25);
+                int startX = x;
+                for (int y = (inputImage.GetLength(1) - 1); y > 0.5 * inputImage.GetLength(1) && !yFound; y--)
+                {
+                    if(inputImage[x,y] == 1 || inputImage[x,y] == 255)
+                    {
+                        firstY = y; firstX = x;
+                        yFound = true;
+                    }
+                }
+            }
+
+            while(!secondyFound)
+            {
+                int x = (int)(inputImage.GetLength(0) * 0.75);
+                int startX = x;
+                for(int y = (inputImage.GetLength(1) - 1); y > 0.5 * inputImage.GetLength(1) && !secondyFound; y--)
+                {
+                    if(inputImage[x,y] == 1 || inputImage[x,y] == 255)
+                    {
+                        leftFirstX = x; leftFirstY = y;
+                        secondyFound = true;
+                    }
+                }
+            }
+
+            // loop over all pixels to find diaphragm 
+            int xCurrent = firstX; int yCurrent = firstY;
+            int[] nextPixel = new int[2];
+            Point currentPoint = new Point();
+            currentPoint.X = xCurrent; currentPoint.Y = yCurrent;
+            Point nextPoint = new Point();
+            nextPoint.X = nextPixel[0]; nextPoint.Y = nextPixel[1];
+            
+
+            while (yFound && secondyFound && !rightborderfound && !leftborderfound && !middlerightfound && !middleleftfound)
+            {
+
+                if(!rightborderfound)
+                {
+                    if (nextPoint.Y > currentPoint.Y) nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, false, true, false);
+                    else nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, false, false, true);
+
+                }
+                    
+                else if(! middlerightfound)
+                {
+                    if (resetRight)
+                    {
+                        xCurrent = firstX; yCurrent = firstY;
+                        nextPoint.X = 0; nextPoint.Y = 0;
+                        resetRight = false;
+                    }
+
+                    if (nextPoint.Y > currentPoint.Y) nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, true, true, false);
+                    else nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, true, false, true);
+
+                }
+
+                else if(!leftborderfound)
+                {
+                    if(useFirstLeft)
+                    {
+                        xCurrent = leftFirstX; yCurrent = leftFirstY;
+                        nextPoint.X = 0; nextPoint.Y = 0;
+                        useFirstLeft = false;
+                    }
+                    if (nextPoint.Y > currentPoint.Y) nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, true, true, false);
+                    else nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, true, false, true);
+                }
+
+                else if (!middleleftfound)
+                {
+                    if(resetLeft)
+                    {
+                        xCurrent = leftFirstX; yCurrent = leftFirstY;
+                        resetLeft = false;
+                    }
+                    if (nextPoint.Y > currentPoint.Y) nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, false, true, false);
+                    else nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, false, false, true);
+                }
+
+
+
+                //Fill in the gaps
+
+                Point highest = new Point(); Point lowest = new Point();
+                if(nextPoint.X > 0 && nextPoint.Y > 0)
+                {
+                    if (nextPoint.Y >= currentPoint.Y)
+                    {
+                        highest = nextPoint;
+                        lowest = currentPoint;
+                    }
+                    else
+                    {
+                        highest = currentPoint;
+                        lowest = nextPoint;
+                    }
+                    output = fillInLungs(inputImage, lowest, highest);
+                }
+                
+
+                //Check when the border or the middle was reached
+                //When going left 
+                xCurrent = nextPoint.X; yCurrent = nextPoint.Y;
+                if (!rightborderfound)
+                {
+                    if (xCurrent <= rightLowerBorder.X)
+                    {
+                        rightborderfound = true;
+                        resetRight = true;
+                    }
+                }
+                else if (!middlerightfound)
+                {
+                    if (xCurrent == 0 && yCurrent == 0) /// TODO: find middleborders when nextpixel = 0
+                    {
+                        
+                        middlerightfound = true;
+                        useFirstLeft = true;
+                    }
+                }
+                else if (!leftborderfound)
+                {
+                    if (xCurrent >= leftLowerBorder.X)
+                    {
+                        leftborderfound = true;
+                        resetLeft = true;
+                    }
+                }
+                else if (!middleleftfound)
+                {
+                    if (xCurrent == 0 && yCurrent == 0)
+                    {
+
+                        middlerightfound = true;
+                        useFirstLeft = true;
+                    }
+                }
+                //End of while
+            }
+            ///TODO: mark pixels part of the lung edge
+            return output;
+
+        }

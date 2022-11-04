@@ -1,0 +1,82 @@
+private List<Tuple<double, double, int, int>> ClavicleDetection(byte[,] inputImage, List<Tuple<int, int, int, int>> Lines) // return lines in y = ax +b, so return a and b
+        {
+            List<Tuple<double, double, int, int>> ClavicleLines = new List<Tuple<double, double, int, int>>();
+            for (int i = 0; i < Lines.Count; i++)
+            {
+                int xstart = Lines[i].Item1;
+                int xend = Lines[i].Item2;
+                int ystart = Lines[i].Item3;
+                int yend = Lines[i].Item4;
+
+                double deltax = xend - xstart;
+                double deltay = yend - ystart;
+                double slope = deltay / deltax; // value a 
+
+                double bvalue = ystart - (slope * xstart);
+
+                if ((slope >= 0 && xstart < (inputImage.GetLength(0) / 2) && ystart < (inputImage.GetLength(1) / 2)) || (slope <= 0 && xstart > (inputImage.GetLength(0) / 2) && ystart < (inputImage.GetLength(1) / 2)))
+                {
+                    ClavicleLines.Add(new Tuple<double, double, int, int>(slope, bvalue, xstart, ystart));
+                }
+            }
+
+            return ClavicleLines;
+        }
+
+        private Tuple<int, int> ClavicleCrossing(List<Tuple<double,double>> ClavicleLines)
+        {
+            // y1 = ax1 + b1 && y2 = ax2 + b2 --> ax1 + b1 = ax2 + b2 --> ax1 - ax2 = b2 - b1 --> (a1-a2)x = b2 - b1 --> x = (b2-b1)/(a1-a2)
+
+            double a1 = ClavicleLines[1].Item1;
+            double b1 = ClavicleLines[1].Item2;
+            double a2 = ClavicleLines[2].Item1;
+            double b2 = ClavicleLines[2].Item2;
+            int xcrossing = (int)((b2 - b1) / (a1 - a2));
+            int ycrossing = (int)(a1 * xcrossing + b1);
+
+            Tuple<int, int> Crossing = new Tuple<int, int>(xcrossing, ycrossing);
+
+            return Crossing; 
+        }
+
+        private byte[,] VisualizeClavicleLines(byte[,] inputImage, List<Tuple<double, double, int, int>> ClavicleLines)
+        {
+            byte[,] outputImage = inputImage;
+            for (int x = 0; x < outputImage.GetLength(0); x++)
+                for (int y = 0; y < outputImage.GetLength(1); y++)
+                    outputImage[x, y] = 0;
+            int xend = outputImage.GetLength(0);
+            int yend = outputImage.GetLength(1);
+            for (int i = 0; i < ClavicleLines.Count; i++)
+            {
+                double slope = ClavicleLines[i].Item1;
+                double bvalue = ClavicleLines[i].Item2;
+                int xstart = ClavicleLines[i].Item3;
+                int ystart = ClavicleLines[i].Item4;
+                double yuse = ystart;
+
+                if (slope >= 0)
+                {
+                    while(xstart < xend && ystart < yend)
+                    {
+                        outputImage[xstart, ystart] = 255;
+                        xstart += 1;
+                        yuse += slope;
+                        ystart = (int)Math.Round(yuse);
+                    }
+                }
+
+                else
+                {
+                    while (xstart >= 0 && ystart < yend)
+                    {
+                        outputImage[xstart, ystart] = 255;
+                        xstart -= 1;
+                        yuse -= slope;
+                        ystart = (int)Math.Round(yuse);
+                    }
+                }
+            }
+
+            return outputImage;
+        }

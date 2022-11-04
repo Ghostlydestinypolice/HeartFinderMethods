@@ -1,0 +1,73 @@
+private byte[,] noiseSuppressor(byte[,] inputImage, int kernelSize)
+        {
+            //float[,] noiseKernel = new float[,] { { 1, 1, 1 }, { 1, -8, 1 }, { 1, 1, 1 } };
+            //byte[,] output = convolveImage(inputImage, noiseKernel);
+            ///TODO: ^Change
+            byte[,] output = inputImage;
+
+            for (int x = 0; x < inputImage.GetLength(0); x++)
+            {
+                for (int y = 0; y < inputImage.GetLength(1); y++)
+                {
+                    //Per pixel
+                    int ayeVotes = 0; int nayVotes = 0; //Vote wether to keep the current value
+                    int kernelLimit = (int)(0.5 * kernelSize); //Spread of the voting
+                    for (int dI = -kernelLimit; dI <= kernelLimit; dI++)
+                    {
+                        for (int dJ = -kernelLimit; dJ <= kernelLimit; dJ++)
+                        {
+                            //Per kernel entry
+                            int nX = x + dI; int nY = y + dJ;
+                            if (!(nX == x && nY == y) 
+                                && nX >= 0 && nX < inputImage.GetLength(0) 
+                                && nY >= 0 && nY < inputImage.GetLength(1))
+                            {
+                                if (inputImage[nX, nY] == inputImage[x, y]) ayeVotes++;
+                                else nayVotes++;
+                            }
+                        }
+                    }
+
+                    if (inputImage[x, y] == 0)
+                    {
+                        if (nayVotes > ayeVotes) ///TODO: Put in the >= ? 
+                        {
+                            output[x, y] = 255; ///TODO: Or 1?
+                        }
+                    }
+                    else
+                    {
+                        if (nayVotes > ayeVotes)
+                        {
+                            output[x, y] = 0;
+                        }
+                    }
+                }
+            }
+
+
+            return output;
+        }
+
+        private byte[,] borderDeletion(byte[,] inputImage, double borderPercentage)
+        {
+            byte[,] output = inputImage;           
+            for (int x = 0; x < inputImage.GetLength(0); x++)
+            {
+                for (int y = 0; y < inputImage.GetLength(1); y++)
+                {
+                    if (x < borderPercentage * inputImage.GetLength(0) || x > (1-borderPercentage) * inputImage.GetLength(0) 
+                        || y < borderPercentage * inputImage.GetLength(1) || y > (1 - borderPercentage) * inputImage.GetLength(1))
+                    {
+                        output[x, y] = 0;
+                    }
+                }
+            }
+
+            MinX = (int)(borderPercentage * inputImage.GetLength(0)) - 1;
+            MaxX = (int)((1 - borderPercentage) * inputImage.GetLength(0)) - 1;
+            MinY = (int)(borderPercentage * inputImage.GetLength(1)) - 1;
+            MaxY = (int)((1 - borderPercentage) * inputImage.GetLength(1)) - 1;
+
+            return output;
+        }

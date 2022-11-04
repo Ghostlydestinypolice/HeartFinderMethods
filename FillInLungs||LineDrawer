@@ -22,7 +22,7 @@ private byte[,] fillInLungs(byte[,] inputImage, Point lowestPoint, Point highest
                 for (x = lowestPoint.X; x <= highestPoint.X; x++)
                 {
                     y = (int)(slope * x) + b;
-                    output[x, y] = 255; ///TODO: change to determine what was done?
+                    output[x, y] = 123; ///TODO: change to determine what was done?
                 }
             }
             else
@@ -31,7 +31,7 @@ private byte[,] fillInLungs(byte[,] inputImage, Point lowestPoint, Point highest
                 for (y = lowestPoint.Y; y <= highestPoint.Y; y++)
                 {
                     x = (int)(slope * y) + b;
-                    output[x, y] = 255; ///TODO: see above
+                    output[x, y] = 123; ///TODO: see above
                 }
             }
 

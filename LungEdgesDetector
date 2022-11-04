@@ -23,10 +23,9 @@ private byte[,] lungEdgesDetector(byte[,] inputImage)
                 if (y >= startY - 10 && y < startY) y--;
                 else if (y < startY - 10) break;
             }
+            startY = y;
             while (!secondXFound)
-            {
-                int y = (int)(inputImage.GetLength(1) * 0.5);
-                int startY = y;
+            { 
                 for (int x = inputImage.GetLength(0) - 1; x > 0.5 * inputImage.GetLength(0) && !secondXFound; x--)
                 {
                     if (inputImage[x, y] == 1 || inputImage[x, y] == 255)

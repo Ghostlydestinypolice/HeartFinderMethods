@@ -1,0 +1,61 @@
+private List<sbyte[]> getViewerCone (bool rightSide)
+        {
+            List<sbyte[]> list = new List<sbyte[]>();
+            sbyte[] currentAddition = new sbyte[2];
+            sbyte sideDet = 1;
+            if (!rightSide) sideDet = -1;
+
+            sbyte dX = sideDet; sbyte dY = 1;
+            for (; dY <= 8; dY++)
+            {
+                currentAddition[0] = 0;
+                currentAddition[1] = dY;
+                list.Add(currentAddition);
+            }
+            for (; dX * sideDet < 3; dX+=sideDet)
+            {
+                for(dY = 1; dY <= 8; dY++)
+                {
+                    currentAddition[0] = dX;
+                    currentAddition[1] = dY;
+                    list.Add(currentAddition);
+                }
+            }
+            for (dX = (sbyte)(sideDet*-1); dX * sideDet > -3; dX-= sideDet)
+            {
+                for (dY = 1; dY <= 8; dY++)
+                {
+                    currentAddition[0] = dX;
+                    currentAddition[1] = dY;
+                    list.Add(currentAddition);
+                }
+            }
+            //First section filled
+            for (dY = 1 + 8; dY <= 8 + 7; dY++)
+            {
+                currentAddition[0] = 0;
+                currentAddition[1] = dY;
+                list.Add(currentAddition);
+            }
+            for (dX = sideDet; dX * sideDet < 5; dX+= sideDet)
+            {
+                for (dY = 1 + 8; dY <= 8 + 7; dY++)
+                {
+                    currentAddition[0] = dX;
+                    currentAddition[1] = dY;
+                    list.Add(currentAddition);
+                }
+            }
+            for (dX = (sbyte)(sideDet * -1); dX * sideDet > -5; dX-= sideDet)
+            {
+                for (dY = 1 + 8; dY <= 8; dY++)
+                {
+                    currentAddition[0] = dX;
+                    currentAddition[1] = dY;
+                    list.Add(currentAddition);
+                }
+            }
+            //Last section filled
+
+            return list;
+        }

@@ -42,7 +42,7 @@
             double slope = (firstpixelspine[1] - middlerightdiaphragm.Y) / (firstpixelspine[0] - middlerightdiaphragm.X);
             while(Yuse >= claviclecrossing.Y)
             {
-                outputImage[Xuse, Yuse] = 255;
+                outputImage[Xuse, Yuse] = 200;
                 Xuse += 1;
                 Yuse1 += slope;
                 Yuse = (int)Math.Round(Yuse1);

@@ -180,7 +180,6 @@
             return output;
         }
 
-        
         private byte[,] diaphragmDetector(byte[,] inputImage)
         {
             byte[,] output = inputImage;
@@ -190,15 +189,20 @@
             bool leftborderfound = false; bool rightborderfound = false;
             bool middleleftfound = false; bool middlerightfound = false;
             bool resetRight = false; bool resetLeft = false; bool useFirstLeft = false;
+            Point highest = new Point(); Point lowest = new Point();
 
 
+            List<double[]> Peaks = peakFinderFromImage(inputImage, 1, 3, 0.4f, 2, 2.3);
+            List<Tuple<int, int, int, int>> Lines = houghlineDetection(inputImage, Peaks, 8, 30, 2);
+            List<Tuple<double, double, int, int>> ClavicleLines = ClavicleDetection(inputImage, Lines);
+            Tuple<int, int> Claviclecrossing = ClavicleCrossing(ClavicleLines);
             while (!yFound)
             {
-                int x = (int)(inputImage.GetLength(0) * 0.25);
+                int x = (int)((Claviclecrossing.Item1 + MinX) / 2);
                 int startX = x;
                 for (int y = (inputImage.GetLength(1) - 1); y > 0.5 * inputImage.GetLength(1) && !yFound; y--)
                 {
-                    if(inputImage[x,y] == 1 || inputImage[x,y] == 255)
+                    if (inputImage[x, y] == 1 || inputImage[x, y] == 255)
                     {
                         firstY = y; firstX = x;
                         yFound = true;
@@ -206,13 +210,13 @@
                 }
             }
 
-            while(!secondyFound)
+            while (!secondyFound)
             {
-                int x = (int)(inputImage.GetLength(0) * 0.75);
+                int x = (int)(MaxX - ((Claviclecrossing.Item1 + MinX) / 2));
                 int startX = x;
-                for(int y = (inputImage.GetLength(1) - 1); y > 0.5 * inputImage.GetLength(1) && !secondyFound; y--)
+                for (int y = (inputImage.GetLength(1) - 1); y > 0.5 * inputImage.GetLength(1) && !secondyFound; y--)
                 {
-                    if(inputImage[x,y] == 1 || inputImage[x,y] == 255)
+                    if (inputImage[x, y] == 1 || inputImage[x, y] == 255)
                     {
                         leftFirstX = x; leftFirstY = y;
                         secondyFound = true;
@@ -227,19 +231,19 @@
             currentPoint.X = xCurrent; currentPoint.Y = yCurrent;
             Point nextPoint = new Point();
             nextPoint.X = nextPixel[0]; nextPoint.Y = nextPixel[1];
-            
 
-            while (yFound && secondyFound && !rightborderfound && !leftborderfound && !middlerightfound && !middleleftfound)
+
+            while (yFound && secondyFound && (!rightborderfound || !leftborderfound || !middlerightfound || !middleleftfound))
             {
 
-                if(!rightborderfound)
+                if (!rightborderfound)
                 {
                     if (nextPoint.Y > currentPoint.Y) nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, false, true, false);
                     else nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, false, false, true);
 
                 }
-                    
-                else if(! middlerightfound)
+
+                else if (!middlerightfound)
                 {
                     if (resetRight)
                     {
@@ -253,9 +257,9 @@
 
                 }
 
-                else if(!leftborderfound)
+                else if (!leftborderfound)
                 {
-                    if(useFirstLeft)
+                    if (useFirstLeft)
                     {
                         xCurrent = leftFirstX; yCurrent = leftFirstY;
                         nextPoint.X = 0; nextPoint.Y = 0;
@@ -267,7 +271,7 @@
 
                 else if (!middleleftfound)
                 {
-                    if(resetLeft)
+                    if (resetLeft)
                     {
                         xCurrent = leftFirstX; yCurrent = leftFirstY;
                         resetLeft = false;
@@ -280,8 +284,8 @@
 
                 //Fill in the gaps
 
-                Point highest = new Point(); Point lowest = new Point();
-                if(nextPoint.X > 0 && nextPoint.Y > 0)
+
+                if (nextPoint.X > 0 && nextPoint.Y > 0)
                 {
                     if (nextPoint.Y >= currentPoint.Y)
                     {
@@ -295,10 +299,11 @@
                     }
                     output = fillInLungs(inputImage, lowest, highest);
                 }
-                
+
 
                 //Check when the border or the middle was reached
                 //When going left 
+                int xPrevious = xCurrent; int yPrevious = yCurrent;
                 xCurrent = nextPoint.X; yCurrent = nextPoint.Y;
                 if (!rightborderfound)
                 {
@@ -312,9 +317,11 @@
                 {
                     if (xCurrent == 0 && yCurrent == 0) /// TODO: find middleborders when nextpixel = 0
                     {
-                        
+                        middlerightdiaphragm.X = xPrevious;
+                        middlerightdiaphragm.Y = yPrevious;
                         middlerightfound = true;
                         useFirstLeft = true;
+
                     }
                 }
                 else if (!leftborderfound)
@@ -329,13 +336,29 @@
                 {
                     if (xCurrent == 0 && yCurrent == 0)
                     {
-
+                        middleleftdiaphragm.X = xPrevious;
+                        middleleftdiaphragm.Y = yPrevious;
                         middlerightfound = true;
                         useFirstLeft = true;
                     }
                 }
+
+
                 //End of while
             }
+            // connect two diaphragm parts
+
+            if (middlerightdiaphragm.Y >= middleleftdiaphragm.Y)
+            {
+                highest = middlerightdiaphragm;
+                lowest = middleleftdiaphragm;
+            }
+            else
+            {
+                highest = middleleftdiaphragm;
+                lowest = middlerightdiaphragm;
+            }
+            output = fillInLungs(inputImage, lowest, highest);
             ///TODO: mark pixels part of the lung edge
             return output;
 

@@ -23,7 +23,7 @@ private List<Tuple<double, double, int, int>> ClavicleDetection(byte[,] inputIma
             return ClavicleLines;
         }
 
-        private Tuple<int, int> ClavicleCrossing(List<Tuple<double,double>> ClavicleLines)
+                private Tuple<int, int> ClavicleCrossing(List<Tuple<double, double, int, int>> ClavicleLines)
         {
             // y1 = ax1 + b1 && y2 = ax2 + b2 --> ax1 + b1 = ax2 + b2 --> ax1 - ax2 = b2 - b1 --> (a1-a2)x = b2 - b1 --> x = (b2-b1)/(a1-a2)
 
@@ -34,9 +34,11 @@ private List<Tuple<double, double, int, int>> ClavicleDetection(byte[,] inputIma
             int xcrossing = (int)((b2 - b1) / (a1 - a2));
             int ycrossing = (int)(a1 * xcrossing + b1);
 
+            claviclecrossing.X = xcrossing;
+            claviclecrossing.Y = ycrossing;
             Tuple<int, int> Crossing = new Tuple<int, int>(xcrossing, ycrossing);
 
-            return Crossing; 
+            return Crossing;
         }
 
         private byte[,] VisualizeClavicleLines(byte[,] inputImage, List<Tuple<double, double, int, int>> ClavicleLines)

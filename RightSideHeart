@@ -1,0 +1,37 @@
+private byte[,] rightSideHeart(byte[,] inputImage, byte maxGap)
+        {
+            ///TODO: Due to the vena cava inferior the exact heart contour is not determinable
+            byte[,] output = inputImage;
+
+            Point startPoint = new Point();
+            int preX = (int)(0.5 * (lowerLeftHeartBound.X - upperLeftHeartBound.X));
+            startPoint.Y = (int)(0.5 * (lowerLeftHeartBound.Y - upperLeftHeartBound.Y));
+            for (int i = 1; preX - i > 0; i++)
+            {
+                if (inputImage[preX - i, startPoint.Y] == 200)
+                {
+                    startPoint.X = preX - i;
+                    i = 520; //fails the for condition
+                }
+            }
+            Point firstRightHeart = new Point(0,0);
+            int dirForloop = 1;
+            for (int s = 0; s > -5; s += dirForloop)
+            {
+                for (int t = 4; startPoint.X - t > 0.25 * inputImage.GetLength(0); t++)
+                {
+                    if (inputImage[startPoint.X - t, startPoint.Y + s] == 255 || inputImage[startPoint.X - t, startPoint.Y + s] == 1)
+                    {
+                        firstRightHeart.X = startPoint.X - t;
+                        firstRightHeart.Y = startPoint.Y + s;
+                        t = 520; s = -520; //Fill always fail both statements
+                    }
+                }
+            }
+            if (firstRightHeart == new Point(0,0))
+            {
+
+            }
+
+            return output;
+        }

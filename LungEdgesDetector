@@ -16,14 +16,18 @@ private byte[,] lungEdgesDetector(byte[,] inputImage)
                         firstY = y;
                         firstX = x;
                         xFound = true;
+                        output[leftFirstX, leftFirstY] = 123;
                     }
                 }
-                if (y <= startY + 10 && y >= startY) y++;
-                else if (y > startY + 10) y = startY -1;
-                if (y >= startY - 10 && y < startY) y--;
-                else if (y < startY - 10) break;
+                if (!secondXFound)
+                {
+                    if (y <= startY + 10 && y >= startY) y++;
+                    else if (y > startY) y = startY - 1;
+                    if (y >= startY - 10 && y < startY) y--;
+                    else if (y < startY - 10) break;
+                }
             }
-            startY = y;
+            y = startY;
             while (!secondXFound)
             { 
                 for (int x = inputImage.GetLength(0) - 1; x > 0.5 * inputImage.GetLength(0) && !secondXFound; x--)
@@ -32,13 +36,17 @@ private byte[,] lungEdgesDetector(byte[,] inputImage)
                     {
                         leftFirstY = y;
                         leftFirstX = x;
-                        xFound = true;
+                        secondXFound = true;
+                        output[leftFirstX, leftFirstY] = 123;
                     }
                 }
-                if (y <= startY + 10 && y >= startY) y++;
-                else if (y > startY) y = startY - 1;
-                if (y >= startY - 10 && y < startY) y--;
-                else if (y < startY - 10) break;
+                if (!secondXFound)
+                {
+                    if (y <= startY + 10 && y >= startY) y++;
+                    else if (y > startY) y = startY - 1;
+                    if (y >= startY - 10 && y < startY) y--;
+                    else if (y < startY - 10) break;
+                }
             }
 
             //Go over all the pixels of that side until the clavicula is met
@@ -60,6 +68,7 @@ private byte[,] lungEdgesDetector(byte[,] inputImage)
                         resetRight = false;
                     }
                     nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, true, false);
+                    Console.WriteLine(nextPixel);
                 }
                 else if (!otherClavFound)
                 {
@@ -70,6 +79,7 @@ private byte[,] lungEdgesDetector(byte[,] inputImage)
                         useFirstLeft = false;
                     }
                     nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, false, true);
+                    Console.WriteLine(nextPixel);
                 }
                 else if(!otherDiaFound)
                 {
@@ -80,6 +90,7 @@ private byte[,] lungEdgesDetector(byte[,] inputImage)
                         resetLeft = false;
                     }
                     nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, false, false);
+                    Console.WriteLine(nextPixel);
                 }
                 if (nextPixel[0] == 0 && nextPixel[1] == 0) //in case no output was found
                 {
@@ -120,7 +131,6 @@ private byte[,] lungEdgesDetector(byte[,] inputImage)
                 }
                 else if (!diaphramFound)
                 {
-                    ///TODO: diafragma in zetten
                     if(yCurrent + 1 >= MaxY) diaphramFound = true; //+1 cuz the border should never be an acceptable value
                 }
                 else if (!otherClavFound)
@@ -135,7 +145,6 @@ private byte[,] lungEdgesDetector(byte[,] inputImage)
                 }
                 else if (!otherDiaFound)
                 {
-                    ///TODO: voor andere diafragma testen
                     if(yCurrent + 1 >= MaxY) otherDiaFound = true; //+1 cuz the border should never be an acceptable value
                 }
                 //End of while

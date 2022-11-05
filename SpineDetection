@@ -1,0 +1,52 @@
+ private byte[,] Spine(byte[,] inputImage)
+        {
+            int[] firstpixelspine = new int[2];
+            int dY = 1; int dX = 1;
+            int startY = middlerightdiaphragm.Y; int testY = 1; double Yuse1 = startY; int Yuse = startY;
+            int startX = middlerightdiaphragm.X; int Xuse = startX;
+            byte[,] outputImage = inputImage;
+
+            while(firstpixelspine[0] == 0 && firstpixelspine[1]==0)
+            {
+                for(; dY <= 8; dY++)
+                {
+                    int locY = startY + dY;
+                    if(inputImage[startX, locY] > 0)
+                    {
+                        firstpixelspine[0] = startX; firstpixelspine[1] = locY;
+                    }
+                }
+
+                for(; dX <= 5; dX++)
+                {
+                    for (; dY <= 8; dY++)
+                    {
+                        int locY = startY + dY;
+                        int locX = startX + dX;
+                        if (inputImage[locX, locY] > 0)
+                        {
+                            firstpixelspine[0] = locX; firstpixelspine[1] = locY;
+                        }
+                    }
+                }
+
+                if(startY == testY)
+                    startY += 8;
+                if(startY == (testY+8))
+                {
+                    startX += 5;
+                    testY += 8;
+                }
+            }
+
+            double slope = (firstpixelspine[1] - middlerightdiaphragm.Y) / (firstpixelspine[0] - middlerightdiaphragm.X);
+            while(Yuse >= claviclecrossing.Y)
+            {
+                outputImage[Xuse, Yuse] = 255;
+                Xuse += 1;
+                Yuse1 += slope;
+                Yuse = (int)Math.Round(Yuse1);
+            }
+
+            return outputImage;
+        }

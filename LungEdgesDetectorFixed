@@ -1,0 +1,327 @@
+private byte[,] lungEdgesDetector(byte[,] inputImage)
+        {
+            byte[,] output = inputImage;
+            bool xFound = false; bool secondXFound = false;
+            int firstX = 0; int firstY = 0;
+            int leftFirstX = 0; int leftFirstY = 0;
+            int y = (int)(inputImage.GetLength(1) * 0.5);
+            int startY = y;
+
+            while (!xFound)
+            {
+                for (int x = 0; x < 0.25 * inputImage.GetLength(0) && !xFound; x++)
+                {
+                    if (inputImage[x, y] == 1 || inputImage[x, y] == 255)
+                    {
+                        firstY = y;
+                        firstX = x;
+                        xFound = true;
+                        output[leftFirstX, leftFirstY] = 123;
+                    }
+                    output[x, y] = 123;
+                }
+                if (!xFound)
+                {
+                    if (y <= startY + 10 && y >= startY) y++;
+                    else if (y > startY) y = startY - 1;
+                    if (y >= startY - 10 && y < startY) y--;
+                    else if (y < startY - 10) break;
+                }
+            }
+            y = startY;
+            while (!secondXFound)
+            { 
+                for (int x = inputImage.GetLength(0) - 1; x > 0.75 * inputImage.GetLength(0) && !secondXFound; x--)
+                {
+                    if (inputImage[x, y] == 1 || inputImage[x, y] == 255)
+                    {
+                        leftFirstY = y;
+                        leftFirstX = x;
+                        secondXFound = true;
+                        output[leftFirstX, leftFirstY] = 123;
+                    }
+                    output[x, y] = 123;
+                }
+                if (!secondXFound)
+                {
+                    if (y <= startY + 10 && y >= startY) y++;
+                    else if (y > startY) y = startY - 1;
+                    if (y >= startY - 10 && y < startY) y--;
+                    else if (y < startY - 10) break;
+                }
+            }
+            //Go over all the pixels of that side until the clavicula is met
+            //set clavicula pixels to a certain value
+            bool claviculaFound = false; bool otherClavFound = false;
+            bool diaphramFound = false; bool otherDiaFound = false;
+            int xCurrent = firstX; int yCurrent = firstY;
+            bool useFirstLeft = false; bool resetRight = false; bool resetLeft = false;
+            while ((xFound && secondXFound) && (!claviculaFound || !otherClavFound || !otherClavFound || !otherDiaFound)) ///TODO: otherside and moving up
+            {
+                int[] nextPixel = new int[2];
+                if (!claviculaFound) nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, true, true); ///TODO: other side?
+                else if (!diaphramFound)
+                {
+                    //Goes to find the right diaphram
+                    if (resetRight)
+                    {
+                        xCurrent = firstX; yCurrent = firstY;
+                        resetRight = false;
+                    }
+                    nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, true, false);
+                }
+                else if (!otherClavFound)
+                {
+                    //Finds left clavicula
+                    if (useFirstLeft)
+                    {
+                        xCurrent = leftFirstX; yCurrent = leftFirstY;
+                        useFirstLeft = false;
+                    }
+                    nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, false, true);
+                }
+                else if(!otherDiaFound)
+                {
+                    //Finds left diaphram
+                    if (resetLeft)
+                    {
+                        xCurrent = leftFirstX; yCurrent = leftFirstY;
+                        resetLeft = false;
+                    }
+                    nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, false, false);
+                }
+                if (nextPixel[0] == 0 && nextPixel[1] == 0) //in case no output was found
+                {
+                    MessageBox.Show("No lung was found");
+                    return output;
+                }
+
+                //Fill in the gaps
+                Point currentPoint = new Point();
+                currentPoint.X = xCurrent; currentPoint.Y = yCurrent;
+                Point nextPoint = new Point();
+                nextPoint.X = nextPixel[0]; nextPoint.Y = nextPixel[1];
+                Point highest = new Point(); Point lowest = new Point();
+                if(nextPoint.Y >= currentPoint.Y)
+                {
+                    highest = nextPoint;
+                    lowest = currentPoint;
+                }
+                else
+                {
+                    highest = currentPoint;
+                    lowest = nextPoint;
+                }
+                output = fillInLungs(inputImage, lowest, highest);
+
+                //Check when above clavicula or the border was reached
+                //When going up
+                xCurrent = nextPoint.X; yCurrent = nextPoint.Y;
+                if (!claviculaFound)
+                {
+                    float a = caviculaLines[0]; float b = caviculaLines[1]; ///TODO: change for left side
+                    float yForThisX = a * xCurrent + b;
+                    if (yCurrent <= yForThisX)
+                    {
+                        claviculaFound = true;
+                        resetRight = true;
+                    }
+                }
+                else if (!diaphramFound)
+                {
+                    if(yCurrent + 1 >= MaxY) diaphramFound = true; //+1 cuz the border should never be an acceptable value
+                }
+                else if (!otherClavFound)
+                {
+                    float a = caviculaLines[2]; float b = caviculaLines[3]; ///TODO: change for left side
+                    float yForThisX = a * xCurrent + b;
+                    if (yCurrent <= yForThisX)
+                    {
+                        otherClavFound = true;
+                        resetLeft = true;
+                    }
+                }
+                else if (!otherDiaFound)
+                {
+                    if(yCurrent + 1 >= MaxY) otherDiaFound = true; //+1 cuz the border should never be an acceptable value
+                }
+                //End of while
+            }
+            ///TODO: mark pixels part of the lung edge
+            return output;
+        }
+
+        private int[] nextPixelFinder(byte[,] inputImage, int currentX, int currentY, bool rightSide, bool up) //please not that the right side of an x-ray is the left side of the image
+        {
+            int[] output = new int[2];
+            sbyte dX; sbyte dY;
+            bool borderReached = false; int reachedY = 0;
+            sbyte vertDir = -1; //-1 is up in an image
+            if(!up) vertDir = 1;
+
+            List<sbyte[]> viewerCone = getViewerCone(rightSide);
+            foreach (sbyte[] entry in viewerCone)
+            {
+                dX = entry[0]; dY = (sbyte)(entry[1] * vertDir); //-1 to go up
+                if (dX == 0 && dY == 0) continue; //safety in case it accidentally looks at the current pixel
+                int stepX = currentX + dX; int stepY = currentY + dY;
+                if (stepX < 0 || stepX > inputImage.GetLength(0))
+                {
+                    stepX = 0;
+                    stepY = 0;
+                }
+                if (stepY < 0 || stepY > inputImage.GetLength(1))
+                {
+                    stepX = 0;
+                    stepY = 0;
+                }
+                if (inputImage[stepX, stepY] == 255 || inputImage[stepX, stepY] == 255)
+                {
+                    output[0] = stepX; output[1] = stepY;
+                    return output;
+                }
+                if (stepY <= MinY)
+                {
+                    borderReached = true;
+                    reachedY = stepY;
+                }
+                else if (stepY >= MaxY)
+                {
+                    borderReached = true;
+                    reachedY = stepY; ///TODO: when lower border hit no diaphram was found
+                }
+            }
+            if (borderReached)
+            {
+                while (reachedY >= MaxY && reachedY <= MinY) reachedY -= vertDir;
+                output[0] = currentX; output[1] = reachedY; //Return the first non-deleted pixel
+                if (up)
+                {
+                    if(rightSide)
+                    {
+                        rightUpperBorder.X = currentX; rightUpperBorder.Y = currentY;
+                    }
+                    else
+                    {
+                        leftUpperBorder.X = currentX; leftUpperBorder.Y = currentY;
+                    }
+                }
+                else
+                {
+                    if (rightSide)
+                    {
+                        rightLowerBorder.X = currentX; rightLowerBorder.Y = currentY;
+                    }
+                    else
+                    {
+                        leftLowerBorder.X = currentX; leftLowerBorder.Y = currentY;
+                    }
+                }
+            }
+
+            return output;
+        }
+
+        //First wants to look far away, and then get closer. if nothing is close, it'll start to look at the other pixels closer and further.
+        private List<sbyte[]> getViewerCone (bool rightSide)
+        {
+            List<sbyte[]> list = new List<sbyte[]>();
+            sbyte[] currentAddition = new sbyte[2];
+            sbyte sideDet = 1;
+            if (!rightSide) sideDet = -1;
+
+            sbyte dX = sideDet; sbyte dY = 12;
+            for (; dY >= 1; dY--)
+            {
+                currentAddition[0] = 0;
+                currentAddition[1] = dY;
+                list.Add(currentAddition);
+            }
+            for (; dX * sideDet < 3; dX+=sideDet)
+            {
+                for(dY = 12; dY >= 1; dY--)
+                {
+                    currentAddition[0] = dX;
+                    currentAddition[1] = dY;
+                    list.Add(currentAddition);
+                }
+            }
+            for (dX = (sbyte)(sideDet*-1); dX * sideDet > -3; dX-= sideDet)
+            {
+                for (dY = 12; dY >= 1; dY--)
+                {
+                    currentAddition[0] = dX;
+                    currentAddition[1] = dY;
+                    list.Add(currentAddition);
+                }
+            }
+            //First section filled
+            for (dY = 12 + 10; dY >= 12; dY--)
+            {
+                currentAddition[0] = 0;
+                currentAddition[1] = dY;
+                list.Add(currentAddition);
+            }
+            for (dX = sideDet; dX * sideDet < 5; dX+= sideDet)
+            {
+                for (dY = 1 + 12; dY <= 12 + 10; dY++)
+                {
+                    currentAddition[0] = dX;
+                    currentAddition[1] = dY;
+                    list.Add(currentAddition);
+                }
+            }
+            for (dX = (sbyte)(sideDet * -1); dX * sideDet > -5; dX-= sideDet)
+            {
+                for (dY = 1 + 12; dY <= 12 + 12; dY++)
+                {
+                    currentAddition[0] = dX;
+                    currentAddition[1] = dY;
+                    list.Add(currentAddition);
+                }
+            }
+            //Last section filled
+
+            return list;
+        }
+
+        private byte[,] fillInLungs(byte[,] inputImage, Point lowestPoint, Point highestPoint)
+        {
+            byte[,] output = inputImage;
+
+            int dX = highestPoint.X - lowestPoint.X;
+            int dY = highestPoint.Y - lowestPoint.Y;
+            float slope; string slopeType = "dxdy";
+            //if (dX == 1 || dX == -1 || dY == 1 || dY == -1) return output; //in case of already bordering pixels
+            if (dX == 0 && dY == 0) return output; //in case it's the same pixel twice
+            if (dX >= dY)
+            {
+                slope = dY / dX;
+                slopeType = "dydx";
+            }
+            else  slope = dX / dY;
+
+            int startX = lowestPoint.X; int startY = lowestPoint.Y;
+            int x = 0; int y = 0;
+            if(slopeType == "dydx")
+            {
+                int b = lowestPoint.Y - (int)(slope * lowestPoint.X);
+                for (x = lowestPoint.X; x <= highestPoint.X; x++)
+                {
+                    y = (int)(slope * x) + b;
+                    output[x, y] = 123; ///TODO: change to determine what was done?
+                }
+            }
+            else
+            {
+                int b = lowestPoint.X - (int)(slope * lowestPoint.Y);
+                for (y = lowestPoint.Y; y <= highestPoint.Y; y++)
+                {
+                    x = (int)(slope * y) + b;
+                    output[x, y] = 123; ///TODO: see above
+                }
+            }
+
+            ///TODO: maybe add an extra line between highest en lowest
+            return output;
+        }

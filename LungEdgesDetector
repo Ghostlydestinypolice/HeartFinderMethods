@@ -1,4 +1,4 @@
-private byte[,] lungEdgesDetector(byte[,] inputImage)
+private byte[,] lungEdgesDetector(byte[,] inputImage, List<Tuple<double, double, int, int>> Claviclelines)
         {
             byte[,] output = inputImage;
             bool xFound = false; bool secondXFound = false;
@@ -16,7 +16,7 @@ private byte[,] lungEdgesDetector(byte[,] inputImage)
                         firstY = y;
                         firstX = x;
                         xFound = true;
-                        output[leftFirstX, leftFirstY] = 123;
+                        output[firstX, firstY] = 123;
                     }
                 }
                 if (!secondXFound)
@@ -58,7 +58,7 @@ private byte[,] lungEdgesDetector(byte[,] inputImage)
             while ((xFound && secondXFound) && (!claviculaFound || !otherClavFound || !otherClavFound || !otherDiaFound)) ///TODO: otherside and moving up
             {
                 int[] nextPixel = new int[2];
-                if (!claviculaFound) nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, true, true); ///TODO: other side?
+                if (!claviculaFound) nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, true, true, true); ///TODO: other side?
                 else if (!diaphramFound)
                 {
                     //Goes to find the right diaphram
@@ -67,7 +67,7 @@ private byte[,] lungEdgesDetector(byte[,] inputImage)
                         xCurrent = firstX; yCurrent = firstY;
                         resetRight = false;
                     }
-                    nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, true, false);
+                    nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, true, false, true);
                     Console.WriteLine(nextPixel);
                 }
                 else if (!otherClavFound)
@@ -78,7 +78,7 @@ private byte[,] lungEdgesDetector(byte[,] inputImage)
                         xCurrent = leftFirstX; yCurrent = leftFirstY;
                         useFirstLeft = false;
                     }
-                    nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, false, true);
+                    nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, false, true, true);
                     Console.WriteLine(nextPixel);
                 }
                 else if(!otherDiaFound)
@@ -89,7 +89,7 @@ private byte[,] lungEdgesDetector(byte[,] inputImage)
                         xCurrent = leftFirstX; yCurrent = leftFirstY;
                         resetLeft = false;
                     }
-                    nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, false, false);
+                    nextPixel = nextPixelFinder(inputImage, xCurrent, yCurrent, false, false, true);
                     Console.WriteLine(nextPixel);
                 }
                 if (nextPixel[0] == 0 && nextPixel[1] == 0) //in case no output was found
@@ -121,8 +121,8 @@ private byte[,] lungEdgesDetector(byte[,] inputImage)
                 xCurrent = nextPoint.X; yCurrent = nextPoint.Y;
                 if (!claviculaFound)
                 {
-                    float a = caviculaLines[0]; float b = caviculaLines[1]; ///TODO: change for left side
-                    float yForThisX = a * xCurrent + b;
+                    double a = claviculaLines[0].Item1; double b = claviculaLines[0].Item2;
+                    double yForThisX = a * xCurrent + b;
                     if (yCurrent >= yForThisX)
                     {
                         claviculaFound = true;
@@ -135,8 +135,8 @@ private byte[,] lungEdgesDetector(byte[,] inputImage)
                 }
                 else if (!otherClavFound)
                 {
-                    float a = caviculaLines[2]; float b = caviculaLines[3]; ///TODO: change for left side
-                    float yForThisX = a * xCurrent + b;
+                     double a = claviculaLines[1].Item1; double b = claviculaLines[1].Item2;
+                    double yForThisX = a * xCurrent + b;
                     if (yCurrent >= yForThisX)
                     {
                         otherClavFound = true;
